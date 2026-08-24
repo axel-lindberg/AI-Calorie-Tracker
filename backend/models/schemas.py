@@ -56,6 +56,14 @@ class MatchedItem(BaseModel):
 class GramEstimate(BaseModel):
     grams: float = Field(description="Estimated weight in grams for this quantity/unit of this specific food.")
     reasoning: str = Field(description="One brief sentence explaining the estimate.")
+    
+class DensityEstimate(BaseModel):
+    grams_per_100ml: float = Field(
+        description="Estimated density of this food in grams per 100ml, "
+        "accounting for whether it's a dry/granular food, a liquid, or "
+        "something in between."
+    )
+    reasoning: str = Field(description="One brief sentence explaining the estimate.")
 
 class CalculatedItem(BaseModel):
     raw_name: str

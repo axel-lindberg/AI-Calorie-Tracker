@@ -10,7 +10,7 @@ from typing import Optional
 
 from openai import OpenAI
 from config import OPENAI_API_KEY, OPENAI_MODEL
-from models.schemas import MatchedItem, CalculatedItem, GramEstimate
+from models.schemas import MatchedItem, CalculatedItem, GramEstimate, DensityEstimate
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -35,11 +35,74 @@ _DIRECT_GRAMS = {
     "kg": 1000.0,
 }
 
+_VOLUME_TO_ML = {
+    "ml": 1.0,
+    "milliliter": 1.0,
+    "milliliters": 1.0,
+    "cl": 10.0,
+    "dl": 100.0,
+    "deciliter": 100.0,
+    "deciliters": 100.0,
+    "l": 1000.0,
+    "liter": 1000.0,
+    "liters": 1000.0,
+    "tsp": 5.0,
+    "teaspoon": 5.0,
+    "teaspoons": 5.0,
+    "tbsp": 15.0,
+    "tablespoon": 15.0,
+    "tablespoons": 15.0,
+    "cup": 240.0,
+    "cups": 240.0,
+    "fl oz": 30.0,
+    "fl. oz": 30.0,
+    "fluid ounce": 30.0,
+    "fluid ounces": 30.0,
+}
 
-def estimate_grams(canonical_name: str, quantity: float, unit: str, verbose: bool = False) -> Optional[float]:
-    direct_factor = _DIRECT_GRAMS.get(unit.strip().lower())
+DENSITY_SYSTEM_PROMPT = """\
+You are estimating the density of a food, in grams per 100ml of volume.
+
+Consider whether this food is dry and granular (e.g. rolled oats, flour, \
+rice - much lighter than water, often 30-60g per 100ml), a liquid (close \
+to 100g per 100ml, like milk or juice), or something denser/chunkier. Do \
+not default to water-like density unless the food is actually a liquid.
+"""
+
+
+def estimate_density_g_per_100ml(canonical_name: str) -> Optional[float]:
+    completion = client.beta.chat.completions.parse(
+        model=OPENAI_MODEL,
+        messages=[
+            {"role": "system", "content": DENSITY_SYSTEM_PROMPT},
+            {"role": "user", "content": f'Food: "{canonical_name}"'},
+        ],
+        response_format=DensityEstimate,
+    )
+    result = completion.choices[0].message.parsed
+    if result is None or result.grams_per_100ml <= 0:
+        return None
+    return result.grams_per_100ml
+
+def estimate_grams(canonical_name: str, quantity: float, unit: str, verbose: bool = True) -> Optional[float]:
+    unit_key = unit.strip().lower()
+    
+    direct_factor = _DIRECT_GRAMS.get(unit_key)
     if direct_factor is not None:
         return quantity * direct_factor
+    
+    volume_factor = _VOLUME_TO_ML.get(unit_key)
+    if volume_factor is not None:
+        total_ml = quantity * volume_factor
+        density = estimate_density_g_per_100ml(canonical_name)
+        if density is None:
+            if verbose:
+                print(f"    -> no density estimate for '{canonical_name}'")
+            return None
+        grams = total_ml * (density / 100.0)
+        if verbose:
+            print(f"    -> {total_ml:.0f}ml @ {density:.0f}g/100ml = {grams:.1f}g for '{canonical_name}'")
+        return grams
 
     completion = client.beta.chat.completions.parse(
         model=OPENAI_MODEL,
@@ -66,7 +129,13 @@ def estimate_grams(canonical_name: str, quantity: float, unit: str, verbose: boo
     return result.grams
 
 
-def calculate_item(item: MatchedItem, verbose: bool = False) -> CalculatedItem:
+def calculate_item(item: MatchedItem, verbose: bool = True) -> CalculatedItem:
+    # print(
+    # f"DEBUG: {item.canonical_name=}, "
+    # f"{item.quantity=}, "
+    # f"{item.unit=}"
+    # )
+    
     if item.nutrition is None:
         return CalculatedItem(raw_name=item.raw_name, canonical_name=item.canonical_name)
 
