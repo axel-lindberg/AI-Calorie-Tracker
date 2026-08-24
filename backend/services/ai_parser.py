@@ -25,6 +25,12 @@ in free text. Extract every distinct food item mentioned, with:
 - unit: the unit for that quantity (e.g. "large", "slice", "cup", "g"). \
   If nothing sensible applies, use "serving".
 
+Do NOT convert or estimate units yourself - preserve the quantity and unit \
+exactly as the user stated them, in their original unit. For example, "2dl" \
+must stay as quantity=2, unit="dl" - never convert it to grams, milliliters, \
+or any other unit. Downstream code handles all unit conversion and weight \
+estimation; your only job here is faithful extraction.
+
 Only extract actual food/drink items. Ignore filler words.
 """
 

@@ -38,19 +38,30 @@ def _tokenize(text: str) -> set:
     return set(re.findall(r"[a-z]+", text.lower()))
 
 #change page_size to get more items
-def _search_usda(query: str, page_size: int = 25) -> List[dict]:
-    response = requests.get(
-        f"{BASE_URL}/foods/search",
-        params={
-            "api_key": USDA_API_KEY,
-            "query": query,
-            "pageSize": page_size,
-            "dataType": ["Foundation", "SR Legacy"],
-        },
-        timeout=10,
-    )
-    response.raise_for_status()
-    return response.json().get("foods", [])
+def _search_usda(query: str, page_size: int = 30) -> List[dict]:
+    try:
+        response = requests.get(
+            f"{BASE_URL}/foods/search",
+            params={
+                "api_key": USDA_API_KEY,
+                "query": query,
+                "pageSize": page_size,
+                "dataType": ["Foundation", "SR Legacy"],
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+
+        content_type = response.headers.get("content-type", "")
+        if "application/json" not in content_type:
+            print(f"    -> USDA returned unexpected content-type '{content_type}' (likely an outage), treating as no results")
+            return []
+
+        return response.json().get("foods", [])
+
+    except requests.exceptions.RequestException as e:
+        print(f"    -> USDA search failed: {e}")
+        return []
 
 
 def _extract_nutrient(food: dict, nutrient_key: str) -> Optional[float]:
@@ -123,7 +134,7 @@ def lookup_nutrition(query: str, verbose = False) -> Optional[NutritionData]:
     if not candidates:
         return None
 
-    filtered_candidates = _pre_filter(query, candidates, 10, False)
+    filtered_candidates = _pre_filter(query, candidates, 15, False)
 
     if verbose:
         for score, food in filtered_candidates:
