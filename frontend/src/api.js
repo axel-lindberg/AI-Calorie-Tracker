@@ -23,6 +23,12 @@ export function logMeal(text) {
   });
 }
 
+export function deleteMeal(mealId) {
+  return request(`/meals/${mealId}`, {
+    method: 'DELETE',
+  });
+}
+
 export function getTodaysTotals() {
   return request('/today/totals');
 }

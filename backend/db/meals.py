@@ -36,7 +36,16 @@ def save_meal(raw_text: str, items: List[CalculatedItem], user_id: int = 1) -> i
             )
 
         return meal_id
-
+    
+    
+def delete_meal(meal_id: int, user_id: int = 1) -> bool:
+    with get_cursor() as cur:
+        cur.execute(
+            "DELETE FROM meals WHERE id = %s AND user_id = %s",
+            (meal_id, user_id),
+        )
+        return cur.rowcount > 0
+    
 
 def get_todays_totals(user_id: int = 1) -> dict:
     with get_cursor() as cur:
