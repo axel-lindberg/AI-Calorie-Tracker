@@ -1,8 +1,4 @@
-// GET /today/log returns one row per meal item (joined with its parent
-// meal), so items belonging to the same meal show up as separate rows with
-// a shared meal_id. Group them back into meals before rendering.
-
-export function renderLog(state) {
+export function renderLog(state, onDelete) {
   const container = document.getElementById('mealLog');
   const { log } = state;
 
@@ -20,7 +16,7 @@ export function renderLog(state) {
   }
 
   container.innerHTML = '';
-  for (const meal of meals.values()) {
+  for (const [mealId, meal] of meals.entries()) {
     const entry = document.createElement('div');
     entry.className = 'log__entry';
 
@@ -37,10 +33,19 @@ export function renderLog(state) {
       .join('');
 
     entry.innerHTML = `
-      <p class="log__entry-time">${time}</p>
+      <div class="log__entry-header">
+        <p class="log__entry-time">${time}</p>
+        <button type="button" class="log__delete" aria-label="Delete this entry">×</button>
+      </div>
       <p class="log__entry-text">${escapeHtml(meal.raw_text)}</p>
       <ul class="log__entry-items">${itemsHtml}</ul>
     `;
+
+    entry.querySelector('.log__delete').addEventListener('click', () => {
+      if (window.confirm('Delete this entry?')) {
+        onDelete(mealId);
+      }
+    });
 
     container.appendChild(entry);
   }

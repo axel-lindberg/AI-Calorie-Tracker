@@ -1,6 +1,6 @@
 import './styles.css';
 
-import { getTodaysTotals, getTodaysLog } from './api.js';
+import { getTodaysTotals, getTodaysLog, deleteMeal } from './api.js';
 import { setState, subscribe } from './state.js';
 import { renderTotals } from './render/totals.js';
 import { renderLog } from './render/log.js';
@@ -11,11 +11,18 @@ async function refresh() {
   setState({ totals, log });
 }
 
-// Every state change re-runs both render functions. Cheap enough at this
-// scale - no need for a virtual DOM or fine-grained diffing.
+async function handleDelete(mealId) {
+  try {
+    await deleteMeal(mealId);
+    await refresh();
+  } catch (err) {
+    console.error('Failed to delete meal', err);
+  }
+}
+
 subscribe((state) => {
   renderTotals(state);
-  renderLog(state);
+  renderLog(state, handleDelete);
 });
 
 initEntryForm(refresh);
