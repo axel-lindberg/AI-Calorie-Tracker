@@ -1,16 +1,10 @@
 # Turn free-text input into structured food items.
 
-import sys
-import os
 import json
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from openai import OpenAI
-from config import OPENAI_API_KEY, OPENAI_MODEL
+from config import OPENAI_MODEL
 from models.schemas import ParsedMeal
-
-client = OpenAI(api_key=OPENAI_API_KEY)
+from services.llm import client
 
 SYSTEM_PROMPT = """\
 You are a nutrition-logging assistant. The user will describe what they ate \
@@ -33,6 +27,7 @@ estimation; your only job here is faithful extraction.
 
 Only extract actual food/drink items. Ignore filler words.
 """
+
 
 def parse_meal_text(text: str) -> ParsedMeal:
     completion = client.beta.chat.completions.parse(

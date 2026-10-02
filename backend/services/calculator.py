@@ -1,18 +1,11 @@
 # Convert a matched item's quantity/unit into grams, then scale its
 # per-100g nutrition data to the actual amount consumed.
 
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from typing import Optional
 
-from openai import OpenAI
-from config import OPENAI_API_KEY, OPENAI_MODEL
+from config import OPENAI_MODEL
 from models.schemas import MatchedItem, CalculatedItem, GramEstimate, DensityEstimate
-
-client = OpenAI(api_key=OPENAI_API_KEY)
+from services.llm import client
 
 SYSTEM_PROMPT = """\
 You are estimating the weight, in grams, of a quantity of food.
@@ -33,6 +26,15 @@ _DIRECT_GRAMS = {
     "gram": 1.0,
     "grams": 1.0,
     "kg": 1000.0,
+    "kilogram": 1000.0,
+    "kilograms": 1000.0,
+    "oz": 28.35,
+    "ounce": 28.35,
+    "ounces": 28.35,
+    "lb": 453.6,
+    "lbs": 453.6,
+    "pound": 453.6,
+    "pounds": 453.6,
 }
 
 _VOLUME_TO_ML = {
@@ -40,6 +42,8 @@ _VOLUME_TO_ML = {
     "milliliter": 1.0,
     "milliliters": 1.0,
     "cl": 10.0,
+    "centiliter": 10.0,
+    "centiliters": 10.0,
     "dl": 100.0,
     "deciliter": 100.0,
     "deciliters": 100.0,
@@ -84,13 +88,14 @@ def estimate_density_g_per_100ml(canonical_name: str) -> Optional[float]:
         return None
     return result.grams_per_100ml
 
-def estimate_grams(canonical_name: str, quantity: float, unit: str, verbose: bool = True) -> Optional[float]:
+
+def estimate_grams(canonical_name: str, quantity: float, unit: str, verbose: bool = False) -> Optional[float]:
     unit_key = unit.strip().lower()
-    
+
     direct_factor = _DIRECT_GRAMS.get(unit_key)
     if direct_factor is not None:
         return quantity * direct_factor
-    
+
     volume_factor = _VOLUME_TO_ML.get(unit_key)
     if volume_factor is not None:
         total_ml = quantity * volume_factor
@@ -129,13 +134,7 @@ def estimate_grams(canonical_name: str, quantity: float, unit: str, verbose: boo
     return result.grams
 
 
-def calculate_item(item: MatchedItem, verbose: bool = True) -> CalculatedItem:
-    # print(
-    # f"DEBUG: {item.canonical_name=}, "
-    # f"{item.quantity=}, "
-    # f"{item.unit=}"
-    # )
-    
+def calculate_item(item: MatchedItem, verbose: bool = False) -> CalculatedItem:
     if item.nutrition is None:
         return CalculatedItem(raw_name=item.raw_name, canonical_name=item.canonical_name)
 

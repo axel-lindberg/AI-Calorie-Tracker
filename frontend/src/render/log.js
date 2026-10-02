@@ -12,7 +12,11 @@ export function renderLog(state, onDelete) {
     if (!meals.has(row.meal_id)) {
       meals.set(row.meal_id, { raw_text: row.raw_text, logged_at: row.logged_at, items: [] });
     }
-    meals.get(row.meal_id).items.push(row);
+    // Meals are LEFT JOINed to their items, so an item-less meal yields
+    // one row with null item columns.
+    if (row.raw_name != null) {
+      meals.get(row.meal_id).items.push(row);
+    }
   }
 
   container.innerHTML = '';

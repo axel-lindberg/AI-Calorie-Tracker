@@ -12,6 +12,8 @@ services:
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Creates the tables on first start (only runs when the volume is empty).
+      - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
 
 volumes:
   postgres_data:

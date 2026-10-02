@@ -1,4 +1,5 @@
-#pipeline of backend used for testing
+# Interactive CLI that runs the full parse -> lookup -> calculate pipeline
+# without the API or database. Handy for manually checking matches.
 
 import json
 from typing import List
@@ -7,6 +8,7 @@ from services.ai_parser import parse_meal_text
 from services.nutrition_lookup import lookup_nutrition
 from services.calculator import calculate_item
 from models.schemas import MatchedItem, CalculatedItem
+
 
 def parse_and_lookup(text: str, verbose: bool = True) -> List[CalculatedItem]:
     parsed = parse_meal_text(text)
