@@ -1,7 +1,8 @@
 # Data shapes shared across the pipeline.
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
+
 
 class FoodItem(BaseModel):
     raw_name: str = Field(description="The food name as mentioned by the user")
@@ -21,7 +22,8 @@ class FoodItem(BaseModel):
             "If the user gave no unit, use 'serving'."
         )
     )
-    
+
+
 class FoodMatchSelection(BaseModel):
     selected_fdc_id: Optional[int] = Field(
         description="fdcId of the candidate that is truly the same food as "
@@ -32,31 +34,34 @@ class FoodMatchSelection(BaseModel):
 
 class ParsedMeal(BaseModel):
     items: List[FoodItem]
-    
+
+
 class NutritionData(BaseModel):
     # Nutrient values for a matched food, always per 100g.
- 
+
     fdc_id: int
     matched_description: str  # the actual USDA food name we matched to
     match_confidence: float  # 0-100 fuzzy match score, for debugging/thresholding
- 
+
     calories_per_100g: float
     protein_g_per_100g: float
     carbs_g_per_100g: float
     fat_g_per_100g: float
-    
+
+
 class MatchedItem(BaseModel):
-    raw_name: str #input from user
-    canonical_name: str #canonical form of user input
+    raw_name: str  # input from user
+    canonical_name: str  # canonical form of user input
     quantity: float
     unit: str
     nutrition: Optional[NutritionData] = None
-    
+
 
 class GramEstimate(BaseModel):
     grams: float = Field(description="Estimated weight in grams for this quantity/unit of this specific food.")
     reasoning: str = Field(description="One brief sentence explaining the estimate.")
-    
+
+
 class DensityEstimate(BaseModel):
     grams_per_100ml: float = Field(
         description="Estimated density of this food in grams per 100ml, "
@@ -64,6 +69,7 @@ class DensityEstimate(BaseModel):
         "something in between."
     )
     reasoning: str = Field(description="One brief sentence explaining the estimate.")
+
 
 class CalculatedItem(BaseModel):
     raw_name: str
@@ -77,7 +83,10 @@ class CalculatedItem(BaseModel):
 
 
 class LogMealRequest(BaseModel):
-    text: str
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    text: str = Field(min_length=1, max_length=1000)
+
 
 class LogMealResponse(BaseModel):
     meal_id: int

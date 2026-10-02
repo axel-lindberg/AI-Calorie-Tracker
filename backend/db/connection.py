@@ -1,16 +1,9 @@
-import os
 from contextlib import contextmanager
 
 import psycopg2
 import psycopg2.extras
-from dotenv import load_dotenv
 
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL is missing.")
+from config import DATABASE_URL
 
 
 @contextmanager

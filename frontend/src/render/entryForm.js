@@ -1,4 +1,4 @@
-import { logMeal } from '../api.js';
+import { ApiError, logMeal } from '../api.js';
 import { initSpeechInput } from './speechInput.js';
 
 // onLogged is called after a successful log, so main.js can decide how to
@@ -28,7 +28,10 @@ export function initEntryForm(onLogged) {
       textarea.value = '';
       await onLogged();
     } catch (err) {
-      errorEl.textContent = "Couldn't log that meal — try again.";
+      errorEl.textContent =
+        err instanceof ApiError && err.status === 422 && err.detail
+          ? err.detail
+          : "Couldn't log that meal — try again.";
       console.error(err);
     } finally {
       button.disabled = false;

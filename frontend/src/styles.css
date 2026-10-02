@@ -246,6 +246,16 @@ body {
   font-size: 20px;
 }
 
+.totals__note {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.totals__note:empty {
+  display: none;
+}
+
 /* ----------------------------------------
    Log / empty state
 ---------------------------------------- */
@@ -257,6 +267,16 @@ body {
   padding: 18px 8px;
   border: 1px dashed #cdd6cd;
   border-radius: 2px;
+}
+
+.log__error {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.log__error:empty {
+  display: none;
 }
 
 .log__entry {

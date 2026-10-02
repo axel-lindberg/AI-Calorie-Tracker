@@ -1,25 +1,32 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
 
+from config import CORS_ORIGINS
 from services.ai_parser import parse_meal_text
 from services.nutrition_lookup import lookup_nutrition
 from services.calculator import calculate_item
-from models.schemas import MatchedItem, CalculatedItem, LogMealRequest, LogMealResponse
+from models.schemas import MatchedItem, LogMealRequest, LogMealResponse
 from db.meals import save_meal, delete_meal, get_todays_totals, get_todays_log
 
 app = FastAPI(title="AI Calorie Tracker")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten this before deploying
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=CORS_ORIGINS,
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Content-Type"],
 )
+
 
 @app.post("/meals", response_model=LogMealResponse)
 def log_meal(request: LogMealRequest):
     parsed = parse_meal_text(request.text)
+
+    if not parsed.items:
+        raise HTTPException(
+            status_code=422,
+            detail="No food or drink items found in that description.",
+        )
 
     calculated_items = []
     for item in parsed.items:

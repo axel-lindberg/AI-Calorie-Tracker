@@ -1,14 +1,8 @@
 # Given a food name, find real nutrition data for it via USDA FoodData Central.
 
-import sys
-import os
-import re
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import requests
 from rapidfuzz import fuzz, utils
-from typing import Optional, List
+from typing import List, Optional, Tuple
 
 from config import USDA_API_KEY
 from models.schemas import NutritionData
@@ -34,10 +28,7 @@ NUTRIENT_UNITS = {
 }
 
 
-def _tokenize(text: str) -> set:
-    return set(re.findall(r"[a-z]+", text.lower()))
-
-#change page_size to get more items
+# Raise page_size to consider more USDA results per search.
 def _search_usda(query: str, page_size: int = 30) -> List[dict]:
     try:
         response = requests.get(
@@ -108,11 +99,13 @@ def _to_nutrition_data(food: dict, confidence: float, verbose: bool = False) -> 
         fat_g_per_100g=max(0.0, fat),
     )
 
+
 def _has_required_nutrients(food: dict) -> bool:
     return all(_extract_nutrient(food, n) is not None
                for n in ("calories", "protein", "fat", "carbs"))
 
-def _pre_filter(query: str, foods: List[dict], limit_num: int, verbose: bool = False) -> List[dict]:
+
+def _pre_filter(query: str, foods: List[dict], limit_num: int) -> List[Tuple[float, dict]]:
     scored = []
 
     for food in foods:
@@ -122,19 +115,16 @@ def _pre_filter(query: str, foods: List[dict], limit_num: int, verbose: bool = F
 
     scored.sort(key=lambda pair: pair[0], reverse=True)
 
-    if verbose:
-            print(f"{score:5.1f} | {description}")
-
-    hasNutrients = [(score, food) for score, food in scored if _has_required_nutrients(food)]
-    return hasNutrients[:limit_num]
+    with_nutrients = [(score, food) for score, food in scored if _has_required_nutrients(food)]
+    return with_nutrients[:limit_num]
 
 
-def lookup_nutrition(query: str, verbose = False) -> Optional[NutritionData]:
+def lookup_nutrition(query: str, verbose: bool = False) -> Optional[NutritionData]:
     candidates = _search_usda(query)
     if not candidates:
         return None
 
-    filtered_candidates = _pre_filter(query, candidates, 15, False)
+    filtered_candidates = _pre_filter(query, candidates, 15)
 
     if verbose:
         for score, food in filtered_candidates:
@@ -143,7 +133,7 @@ def lookup_nutrition(query: str, verbose = False) -> Optional[NutritionData]:
     if not filtered_candidates:
         return None
 
-    selected = select_best_match(query, filtered_candidates, verbose=True)
+    selected = select_best_match(query, filtered_candidates, verbose=verbose)
     if selected is None:
         return None
 
@@ -160,7 +150,7 @@ if __name__ == "__main__":
         if not query:
             continue
 
-        result = lookup_nutrition(query, True)
+        result = lookup_nutrition(query, verbose=True)
 
         if result is None:
             print(f"No confident match found for '{query}'.")
