@@ -24,12 +24,21 @@
     <!-- Input section -->
     <section class="entry" aria-label="Log a meal">
       <label for="meal-input" class="entry__label">What did you eat?</label>
-      <textarea
-        id="meal-input"
-        class="entry__input"
-        placeholder="e.g. two scrambled eggs, a slice of sourdough toast, and a black coffee"
-        rows="3"
-      ></textarea>
+      <div class="entry__input-wrap">
+        <textarea
+          id="meal-input"
+          class="entry__input"
+          placeholder="e.g. two scrambled eggs, a slice of sourdough toast, and a black coffee"
+          rows="3"
+        ></textarea>
+        <button type="button" id="micButton" class="entry__mic" aria-pressed="false" title="Dictate by voice" hidden>
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/>
+            <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V20H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.08A7 7 0 0 0 19 11Z"/>
+          </svg>
+        </button>
+      </div>
+      <p id="micStatus" class="entry__mic-status" aria-live="polite"></p>
       <button type="button" id="logButton" class="entry__submit">Log meal</button>
       <p id="formError" class="entry__error" role="alert"></p>
     </section>

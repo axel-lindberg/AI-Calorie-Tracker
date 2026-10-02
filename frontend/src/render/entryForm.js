@@ -1,4 +1,5 @@
 import { logMeal } from '../api.js';
+import { initSpeechInput } from './speechInput.js';
 
 // onLogged is called after a successful log, so main.js can decide how to
 // refresh state (currently: refetch totals + log from the backend).
@@ -6,8 +7,13 @@ export function initEntryForm(onLogged) {
   const textarea = document.getElementById('meal-input');
   const button = document.getElementById('logButton');
   const errorEl = document.getElementById('formError');
+  const micButton = document.getElementById('micButton');
+  const micStatus = document.getElementById('micStatus');
+
+  const speech = initSpeechInput({ textarea, micButton, statusEl: micStatus });
 
   button.addEventListener('click', async () => {
+    speech.stop();
     const text = textarea.value.trim();
     if (!text) return;
 
